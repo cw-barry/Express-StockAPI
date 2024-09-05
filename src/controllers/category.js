@@ -22,7 +22,7 @@ module.exports = {
                 </ul>
             `
         */
-    console.log('list run');
+    // console.log('list run');
     const categories = await res.getModelList(Category);
     // Get product count for each category
     const categoriesWithProductCount = await Promise.all(
@@ -37,7 +37,7 @@ module.exports = {
       })
     );
 
-    console.log(categoriesWithProductCount);
+    // console.log(categoriesWithProductCount);
 
     res.status(200).send({
       error: false,

